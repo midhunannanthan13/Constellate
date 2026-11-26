@@ -145,3 +145,72 @@ class HabitViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK
         )
+
+
+class MySkyView(viewsets.ViewSet):
+    """
+    Lightweight, single-request endpoint returning the signed-in user's
+    active habits with streaks, 60-day check-in dates, and friend code.
+    Powers the animated personal night sky.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        user = request.user
+        today = timezone.localdate()
+        cutoff_date = today - timedelta(days=60)
+
+        # Get active habits
+        habits = Habit.objects.filter(user=user, archived=False).order_by('created_at')
+
+        # Efficiently fetch all check-ins for the user in the last 60 days in one query
+        all_checkins = CheckIn.objects.filter(
+            habit__user=user,
+            habit__archived=False,
+            date__gte=cutoff_date,
+            date__lte=today
+        ).order_by('date')
+
+        # Group check-ins by habit_id
+        checkins_by_habit = {}
+        for c in all_checkins:
+            checkins_by_habit.setdefault(c.habit_id, []).append({
+                "id": c.id,
+                "date": c.date.strftime('%Y-%m-%d'),
+                "note": c.note or ""
+            })
+
+        habits_data = []
+        for h in habits:
+            current_streak, best_streak = h.calculate_streaks()
+            h_checkins = checkins_by_habit.get(h.id, [])
+            checkin_dates_set = {c["date"] for c in h_checkins}
+            is_checked_today = today.strftime('%Y-%m-%d') in checkin_dates_set
+
+            habits_data.append({
+                "id": h.id,
+                "name": h.name,
+                "colour": h.colour,
+                "days_per_week_goal": h.days_per_week_goal,
+                "current_streak": current_streak,
+                "best_streak": best_streak,
+                "total_checkins": h.check_ins.count(),
+                "is_checked_today": is_checked_today,
+                "is_constellation_complete": current_streak >= 7,
+                "checkins": h_checkins
+            })
+
+        # Friend code
+        friend_code = getattr(user.profile, 'friend_code', None) if hasattr(user, 'profile') else None
+
+        return Response({
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "friend_code": friend_code
+            },
+            "today": today.strftime('%Y-%m-%d'),
+            "habits": habits_data
+        }, status=status.HTTP_200_OK)
+

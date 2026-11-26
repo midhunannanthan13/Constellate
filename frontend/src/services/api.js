@@ -130,3 +130,12 @@ export const habitsApi = {
     }),
 };
 
+export const skyApi = {
+  get: (token) =>
+    apiRequest('/sky/', {
+      method: 'GET',
+      token,
+    }),
+};
+
+
