@@ -163,9 +163,9 @@ export default function MySky() {
       )}
 
       {/* Main Layout: Sky Canvas (Left/Center) + Side Panel (Right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem', alignItems: 'start' }}>
+      <div className="sky-layout-grid">
         {/* Left Column: Interactive Night Sky */}
-        <div>
+        <div style={{ minWidth: 0 }}>
           {loading ? (
             <div className="glass-card" style={{ height: '480px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ textAlign: 'center' }}>
@@ -197,9 +197,9 @@ export default function MySky() {
                 checkingInId={checkingInId}
               />
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.85rem', fontSize: '0.825rem', color: 'var(--text-dim)' }}>
-                <span>✦ Tip: Tap any star to view details or check in. 7 consecutive check-ins form a complete constellation.</span>
-                <Link to="/habits" style={{ color: 'var(--aurora-teal)', textDecoration: 'none' }}>
+              <div className="sky-tip-bar">
+                <span>✦ Tap any star to inspect or check in — 7 days in a row completes a constellation.</span>
+                <Link to="/habits" className="sky-tip-link">
                   Manage Habits →
                 </Link>
               </div>

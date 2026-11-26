@@ -646,6 +646,57 @@ p {
   }
 }
 
+/* --- Screen Reader Only Utility (Visually hidden, accessible to assistive tech) --- */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* --- My Sky Responsive Layout --- */
+.sky-layout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.sky-tip-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 0.9rem;
+  padding: 0 0.25rem;
+  font-size: 0.825rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.sky-tip-link {
+  color: var(--aurora-teal);
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sky-tip-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 920px) {
+  .sky-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* --- Keyframe Animations --- */
 @keyframes starPulse {
   0%, 100% {
