@@ -12,6 +12,7 @@ import SignUp from './pages/SignUp';
 import MySky from './pages/MySky';
 import Habits from './pages/Habits';
 import HabitDetail from './pages/HabitDetail';
+import WeeklyReport from './pages/WeeklyReport';
 import StylePreview from './components/StylePreview';
 import './index.css';
 
@@ -69,6 +70,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <HabitDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/report"
+              element={
+                <ProtectedRoute>
+                  <WeeklyReport />
                 </ProtectedRoute>
               }
             />

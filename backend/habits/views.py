@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from datetime import datetime, timedelta
-from django.db import IntegrityError
+from django.db import IntegrityError, connection
 from .models import Habit, CheckIn
 from .serializers import HabitSerializer, HabitDetailSerializer, CheckInSerializer
 
@@ -213,4 +213,181 @@ class MySkyView(viewsets.ViewSet):
             "today": today.strftime('%Y-%m-%d'),
             "habits": habits_data
         }, status=status.HTTP_200_OK)
+
+
+class WeeklyReportView(viewsets.ViewSet):
+    """
+    Powers the Weekly Sky Report.
+    Reads habit 7-day & previous-7-day summaries directly from the MySQL view
+    `weekly_habit_summary_view`, scoped strictly to the signed-in user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        user = request.user
+        today = timezone.localdate()
+
+        # 1. Read habit summaries directly from MySQL view weekly_habit_summary_view
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    habit_id,
+                    habit_name,
+                    colour,
+                    days_per_week_goal,
+                    this_week_checkins,
+                    last_week_checkins
+                FROM weekly_habit_summary_view
+                WHERE user_id = %s AND archived = 0
+                ORDER BY habit_id ASC
+                """,
+                [user.id],
+            )
+            view_rows = cursor.fetchall()
+
+        if not view_rows:
+            return Response({
+                "has_habits": False,
+                "total_this_week": 0,
+                "total_last_week": 0,
+                "best_current_streak": 0,
+                "most_consistent_habit": None,
+                "quietest_day": None,
+                "daily_checkins": [
+                    {
+                        "date": (today - timedelta(days=i)).strftime('%Y-%m-%d'),
+                        "day_name": (today - timedelta(days=i)).strftime('%a'),
+                        "count": 0,
+                    }
+                    for i in range(6, -1, -1)
+                ],
+                "habits_progress": [],
+            }, status=status.HTTP_200_OK)
+
+        # Map streaks for active habits
+        habits_by_id = {
+            h.id: h for h in Habit.objects.filter(user=user, archived=False)
+        }
+
+        total_this_week = 0
+        total_last_week = 0
+        best_current_streak = 0
+        habits_progress = []
+        most_consistent = None
+
+        for row in view_rows:
+            habit_id, habit_name, colour, goal, this_week, last_week = row
+            this_week = int(this_week or 0)
+            last_week = int(last_week or 0)
+            goal = int(goal or 1)
+
+            total_this_week += this_week
+            total_last_week += last_week
+
+            habit_obj = habits_by_id.get(habit_id)
+            current_streak, best_streak = habit_obj.calculate_streaks() if habit_obj else (0, 0)
+            if current_streak > best_current_streak:
+                best_current_streak = current_streak
+
+            ratio = this_week / goal
+            progress_percent = min(100, round(ratio * 100))
+
+            habit_entry = {
+                "id": habit_id,
+                "name": habit_name,
+                "colour": colour,
+                "days_per_week_goal": goal,
+                "this_week_checkins": this_week,
+                "last_week_checkins": last_week,
+                "current_streak": current_streak,
+                "best_streak": best_streak,
+                "progress_percent": progress_percent,
+            }
+            habits_progress.append(habit_entry)
+
+            if this_week > 0:
+                if most_consistent is None:
+                    most_consistent = (ratio, current_streak, habit_entry)
+                else:
+                    if (ratio, current_streak) > (most_consistent[0], most_consistent[1]):
+                        most_consistent = (ratio, current_streak, habit_entry)
+
+        # 2. Check-ins per day for the last 7 days (including today)
+        seven_days_ago = today - timedelta(days=6)
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT c.date, COUNT(*)
+                FROM check_ins c
+                INNER JOIN habits h ON c.habit_id = h.id
+                WHERE h.user_id = %s
+                  AND h.archived = 0
+                  AND c.date >= %s
+                  AND c.date <= %s
+                GROUP BY c.date
+                """,
+                [user.id, seven_days_ago, today],
+            )
+            daily_counts = {
+                row[0].strftime('%Y-%m-%d'): int(row[1])
+                for row in cursor.fetchall()
+            }
+
+        daily_checkins = []
+        for i in range(6, -1, -1):
+            d = today - timedelta(days=i)
+            d_str = d.strftime('%Y-%m-%d')
+            daily_checkins.append({
+                "date": d_str,
+                "day_name": d.strftime('%a'),
+                "full_day_name": d.strftime('%A'),
+                "count": daily_counts.get(d_str, 0),
+            })
+
+        # 3. Quietest day of the week over the last 4 weeks (28 days)
+        four_weeks_ago = today - timedelta(days=27)
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT DAYNAME(c.date) AS weekday_name, COUNT(*) AS cnt
+                FROM check_ins c
+                INNER JOIN habits h ON c.habit_id = h.id
+                WHERE h.user_id = %s
+                  AND h.archived = 0
+                  AND c.date >= %s
+                  AND c.date <= %s
+                GROUP BY DAYNAME(c.date)
+                """,
+                [user.id, four_weeks_ago, today],
+            )
+            weekday_counts_raw = dict(cursor.fetchall())
+
+        total_4_weeks = sum(int(v) for v in weekday_counts_raw.values())
+        quietest_day = None
+        if total_4_weeks > 0:
+            weekdays_order = [
+                'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+                'Friday', 'Saturday', 'Sunday'
+            ]
+            quietest_name = min(
+                weekdays_order,
+                key=lambda wd: int(weekday_counts_raw.get(wd, 0))
+            )
+            quietest_day = {
+                "day_name": quietest_name,
+                "count": int(weekday_counts_raw.get(quietest_name, 0)),
+            }
+
+        return Response({
+            "has_habits": True,
+            "total_this_week": total_this_week,
+            "total_last_week": total_last_week,
+            "best_current_streak": best_current_streak,
+            "most_consistent_habit": most_consistent[2] if most_consistent else None,
+            "quietest_day": quietest_day,
+            "daily_checkins": daily_checkins,
+            "habits_progress": habits_progress,
+        }, status=status.HTTP_200_OK)
+
 

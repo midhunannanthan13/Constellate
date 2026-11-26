@@ -138,4 +138,12 @@ export const skyApi = {
     }),
 };
 
+export const reportsApi = {
+  weekly: (token) =>
+    apiRequest('/reports/weekly/', {
+      method: 'GET',
+      token,
+    }),
+};
+
 
