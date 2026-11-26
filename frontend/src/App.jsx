@@ -15,6 +15,19 @@ import HabitDetail from './pages/HabitDetail';
 import StylePreview from './components/StylePreview';
 import './index.css';
 
+function HomeRoute() {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="container" style={{ textAlign: 'center', padding: '6rem 0' }}>
+        <div className="brand-icon" style={{ fontSize: '2.5rem', marginBottom: '1rem' }} aria-hidden="true">✦</div>
+        <p style={{ color: 'var(--text-muted)' }}>Illuminating your sky...</p>
+      </div>
+    );
+  }
+  return isAuthenticated ? <Navigate to="/sky" replace /> : <Welcome />;
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -27,12 +40,12 @@ export default function App() {
 
         <main id="main-content" tabIndex={-1}>
           <Routes>
-            <Route path="/" element={<Navigate to="/welcome" replace />} />
+            <Route path="/" element={<HomeRoute />} />
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
 
-            {/* Protected Sky Dashboard */}
+            {/* Protected Sky Dashboard (Signature Home Page) */}
             <Route
               path="/sky"
               element={
