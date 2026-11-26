@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 /**
  * Deterministic pseudo-random number generator from a string seed.
- * Ensures star positions never shift or jitter between renders.
+ * Guarantees star positions and celestial layouts never shift between renders.
  */
 function hashSeed(str) {
   let h = 2166136261 >>> 0;
@@ -19,7 +19,6 @@ function hashSeed(str) {
   };
 }
 
-// Convert YYYY-MM-DD to local midnight timestamp for exact day diffing
 function parseLocalDate(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d).getTime();
@@ -30,21 +29,29 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 export default function NightSky({
   habits = [],
   onCheckinToggle,
-  onHabitClick,
   checkingInId = null,
 }) {
   const containerRef = useRef(null);
-  const [dimensions, setDimensions] = useState({ width: 900, height: 600 });
+  const [dimensions, setDimensions] = useState({ width: 960, height: 600 });
   const [selectedStarHabit, setSelectedStarHabit] = useState(null);
+  const [isTabVisible, setIsTabVisible] = useState(true);
 
-  // Resize observer to maintain crisp responsiveness
+  // Pause animations when browser tab is inactive for peak efficiency
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabVisible(!document.hidden);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Responsive container observer
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
         const { clientWidth } = containerRef.current;
-        // Maintain a pleasing astronomical 16:10 or 16:9 ratio
-        const w = clientWidth || 900;
-        const h = Math.max(Math.min(w * 0.65, 680), 460);
+        const w = clientWidth || 960;
+        const h = Math.max(Math.min(w * 0.65, 680), 480);
         setDimensions({ width: w, height: h });
       }
     };
@@ -54,13 +61,31 @@ export default function NightSky({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Compute deterministic constellation layout for each habit
+  // Compute ambient stardust points for deep space atmosphere
+  const ambientStardust = useMemo(() => {
+    const dustRng = hashSeed('constellate_ambient_stardust_universe');
+    const points = [];
+    const count = 48;
+    for (let i = 0; i < count; i++) {
+      points.push({
+        id: `stardust_${i}`,
+        x: dustRng() * dimensions.width,
+        y: dustRng() * dimensions.height,
+        r: dustRng() * 1.2 + 0.3,
+        opacity: dustRng() * 0.45 + 0.15,
+        twinkleDelay: (dustRng() * 5).toFixed(1) + 's',
+      });
+    }
+    return points;
+  }, [dimensions]);
+
+  // Compute deterministic constellation layouts
   const constellationData = useMemo(() => {
     const { width, height } = dimensions;
     const count = habits.length;
     if (count === 0) return [];
 
-    // Region centers for each habit based on count
+    // Assign harmonic celestial region centers
     const centers = [];
     if (count === 1) {
       centers.push({ x: width * 0.5, y: height * 0.48 });
@@ -68,13 +93,12 @@ export default function NightSky({
       centers.push({ x: width * 0.32, y: height * 0.48 });
       centers.push({ x: width * 0.68, y: height * 0.48 });
     } else if (count === 3) {
-      centers.push({ x: width * 0.28, y: height * 0.4 });
-      centers.push({ x: width * 0.72, y: height * 0.4 });
-      centers.push({ x: width * 0.5, y: height * 0.7 });
+      centers.push({ x: width * 0.28, y: height * 0.38 });
+      centers.push({ x: width * 0.72, y: height * 0.38 });
+      centers.push({ x: width * 0.5, y: height * 0.72 });
     } else {
-      // Orbital distribution around sky
-      const rx = width * 0.35;
-      const ry = height * 0.3;
+      const rx = width * 0.36;
+      const ry = height * 0.32;
       const cx = width * 0.5;
       const cy = height * 0.5;
       for (let i = 0; i < count; i++) {
@@ -88,29 +112,28 @@ export default function NightSky({
 
     return habits.map((habit, habitIndex) => {
       const center = centers[habitIndex] || { x: width * 0.5, y: height * 0.5 };
-      const rng = hashSeed(`habit_${habit.id}_pos`);
 
       // Sort check-ins chronologically
       const sortedCheckins = [...(habit.checkins || [])].sort((a, b) =>
         a.date.localeCompare(b.date)
       );
 
-      // Home star properties
+      // Home star sizing & halo
       const streak = habit.current_streak || 0;
-      const homeRadius = Math.min(8 + streak * 0.85, 18);
+      const homeRadius = Math.min(8.5 + streak * 0.9, 19);
 
-      // Compute positions of check-in stars relative to home star
+      // Compute deterministic star positions
       const stars = sortedCheckins.map((checkin, idx) => {
         const starRng = hashSeed(`${habit.id}_${checkin.date}`);
         const baseAngle = (idx / Math.max(sortedCheckins.length, 1)) * Math.PI * 2;
-        const jitterAngle = (starRng() - 0.5) * 0.4;
+        const jitterAngle = (starRng() - 0.5) * 0.45;
         const angle = baseAngle + jitterAngle;
 
-        // Spread stars in an organic celestial cluster
-        const dist = 32 + (idx % 7) * 14 + starRng() * 18;
+        // Celestial radius from home star
+        const dist = 34 + (idx % 7) * 15 + starRng() * 18;
 
-        const x = Math.max(30, Math.min(width - 30, center.x + Math.cos(angle) * dist));
-        const y = Math.max(30, Math.min(height - 30, center.y + Math.sin(angle) * dist));
+        const x = Math.max(35, Math.min(width - 35, center.x + Math.cos(angle) * dist));
+        const y = Math.max(35, Math.min(height - 35, center.y + Math.sin(angle) * dist));
 
         return {
           id: checkin.id,
@@ -118,11 +141,13 @@ export default function NightSky({
           note: checkin.note,
           x,
           y,
-          radius: 3.5 + (idx % 3) * 0.5,
+          radius: 3.8 + (idx % 3) * 0.6,
+          twinkleDelay: (starRng() * 4).toFixed(2) + 's',
+          twinkleDuration: (2.8 + starRng() * 1.8).toFixed(2) + 's',
         };
       });
 
-      // Compute consecutive connecting lines
+      // Compute consecutive line segments
       const lines = [];
       for (let i = 1; i < stars.length; i++) {
         const prev = stars[i - 1];
@@ -132,7 +157,6 @@ export default function NightSky({
         const tCurr = parseLocalDate(curr.date);
         const dayDiff = Math.round((tCurr - tPrev) / ONE_DAY_MS);
 
-        // Connect only if days are strictly consecutive (1 day gap)
         if (dayDiff === 1) {
           lines.push({
             id: `line_${prev.date}_${curr.date}`,
@@ -144,7 +168,7 @@ export default function NightSky({
         }
       }
 
-      // If home star is active, connect the most recent checkin to the home star
+      // Connect latest check-in star to home star
       if (stars.length > 0) {
         const lastStar = stars[stars.length - 1];
         lines.push({
@@ -157,13 +181,32 @@ export default function NightSky({
         });
       }
 
+      // Compute celebratory shimmer sparkles for 7-day complete constellations
+      const isComplete = habit.is_constellation_complete;
+      const sparkles = [];
+      if (isComplete) {
+        const sparkRng = hashSeed(`sparkle_${habit.id}`);
+        for (let s = 0; s < 6; s++) {
+          const spAngle = sparkRng() * Math.PI * 2;
+          const spDist = 45 + sparkRng() * 55;
+          sparkles.push({
+            id: `sp_${s}`,
+            x: center.x + Math.cos(spAngle) * spDist,
+            y: center.y + Math.sin(spAngle) * spDist,
+            size: sparkRng() * 8 + 8,
+            delay: (sparkRng() * 2).toFixed(1) + 's',
+          });
+        }
+      }
+
       return {
         habit,
         center,
         homeRadius,
         stars,
         lines,
-        isComplete: habit.is_constellation_complete,
+        isComplete,
+        sparkles,
       };
     });
   }, [habits, dimensions]);
@@ -176,104 +219,208 @@ export default function NightSky({
         position: 'relative',
         padding: 0,
         overflow: 'hidden',
-        minHeight: '480px',
+        minHeight: '500px',
         border: '1px solid var(--glass-border)',
-        boxShadow: '0 12px 48px rgba(0, 0, 0, 0.5), inset 0 0 80px rgba(16, 26, 58, 0.4)',
-        background: 'radial-gradient(ellipse 90% 80% at 50% 50%, rgba(16, 26, 58, 0.4) 0%, rgba(7, 11, 26, 0.95) 100%)',
+        boxShadow: '0 16px 54px rgba(0, 0, 0, 0.6), inset 0 0 100px rgba(16, 26, 58, 0.5)',
+        background: 'radial-gradient(ellipse 95% 85% at 50% 50%, #0d1533 0%, #070B1A 90%)',
       }}
-      aria-label="Interactive Night Sky Constellations Canvas"
+      aria-label="Interactive Magical Night Sky Constellations Canvas"
     >
-      {/* Background celestial grid lines / ambient aura */}
-      <svg
-        width={dimensions.width}
-        height={dimensions.height}
-        style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
-        aria-hidden="true"
-      >
-        <defs>
-          <radialGradient id="nebulaAura" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#8B7CFF" stopOpacity="0.06" />
-            <stop offset="100%" stopColor="#070B1A" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#nebulaAura)" />
-      </svg>
-
-      {/* Interactive Constellations SVG Layer */}
       <svg
         width={dimensions.width}
         height={dimensions.height}
         style={{ display: 'block', width: '100%', height: '100%' }}
       >
         <defs>
-          {/* Shimmer filter for 7-day completed constellations */}
-          <filter id="constellationShimmer" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
+          {/* Universal soft glow filter */}
+          <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur2" />
             <feMerge>
-              <feMergeNode in="blur" />
+              <feMergeNode in="blur2" />
+              <feMergeNode in="blur1" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+
+          {/* Celebratory Shimmer Filter */}
+          <filter id="celebrateGlow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          {/* Nebula clouds for each habit's region */}
+          {constellationData.map(({ habit, center, isComplete }) => (
+            <radialGradient
+              key={`nebulaGrad_${habit.id}`}
+              id={`nebulaGrad_${habit.id}`}
+              cx="50%"
+              cy="50%"
+              r="50%"
+            >
+              <stop offset="0%" stopColor={habit.colour} stopOpacity={isComplete ? 0.22 : 0.12} />
+              <stop offset="45%" stopColor={habit.colour} stopOpacity={isComplete ? 0.08 : 0.04} />
+              <stop offset="75%" stopColor="#8B7CFF" stopOpacity="0.02" />
+              <stop offset="100%" stopColor="#070B1A" stopOpacity="0" />
+            </radialGradient>
+          ))}
         </defs>
 
-        {constellationData.map(({ habit, center, homeRadius, stars, lines, isComplete }) => {
+        {/* --- 1. Ambient Stardust Field (Adds Cosmic Depth) --- */}
+        <g className="ambient-stardust" aria-hidden="true">
+          {ambientStardust.map((d) => (
+            <circle
+              key={d.id}
+              cx={d.x}
+              cy={d.y}
+              r={d.r}
+              fill="#EAF0FF"
+              opacity={d.opacity}
+              style={{
+                animation: isTabVisible ? `celestialTwinkle 4s infinite ease-in-out` : 'none',
+                animationDelay: d.twinkleDelay,
+              }}
+            />
+          ))}
+        </g>
+
+        {/* --- 2. Nebula Glow Clouds Behind Constellations --- */}
+        <g className="nebula-layers" aria-hidden="true">
+          {constellationData.map(({ habit, center, isComplete }) => (
+            <g key={`nebula_group_${habit.id}`} className="nebula-mesh">
+              <ellipse
+                cx={center.x}
+                cy={center.y}
+                rx={isComplete ? 140 : 110}
+                ry={isComplete ? 110 : 85}
+                fill={`url(#nebulaGrad_${habit.id})`}
+                style={{
+                  filter: 'blur(12px)',
+                  transition: 'all 0.8s ease',
+                }}
+              />
+            </g>
+          ))}
+        </g>
+
+        {/* --- 3. Constellations, Lines & Stars --- */}
+        {constellationData.map(({ habit, center, homeRadius, stars, lines, isComplete, sparkles }) => {
           const isPulseTarget = checkingInId === habit.id;
 
           return (
             <g
               key={habit.id}
-              className={`constellation-group ${isComplete ? 'constellation-completed' : ''}`}
+              className={`constellation-cluster ${isComplete ? 'constellation-completed' : ''}`}
             >
-              {/* Constellation Lines */}
-              {lines.map((line) => (
-                <line
-                  key={line.id}
-                  x1={line.x1}
-                  y1={line.y1}
-                  x2={line.x2}
-                  y2={line.y2}
+              {/* Celebratory Ethereal Constellation Polygon Aura for 7-day streak */}
+              {isComplete && stars.length >= 3 && (
+                <polygon
+                  points={`${center.x},${center.y} ` + stars.map((s) => `${s.x},${s.y}`).join(' ')}
+                  fill={habit.colour}
+                  fillOpacity="0.05"
                   stroke={habit.colour}
-                  strokeWidth={line.isHomeBond ? 1.8 : 1.4}
-                  strokeOpacity={line.isHomeBond ? 0.8 : 0.6}
-                  strokeDasharray={line.isHomeBond ? '3 3' : 'none'}
-                  style={{
-                    filter: `drop-shadow(0 0 6px ${habit.colour})`,
-                    transition: 'all 0.5s ease',
-                  }}
+                  strokeOpacity="0.25"
+                  strokeWidth="1"
+                  strokeDasharray="4 4"
+                  filter="url(#celebrateGlow)"
+                  aria-hidden="true"
                 />
+              )}
+
+              {/* Luminous Constellation Lines (Dual Pass for Soft Glow) */}
+              {lines.map((line) => (
+                <g key={line.id}>
+                  {/* Outer Glow Stroke */}
+                  <line
+                    x1={line.x1}
+                    y1={line.y1}
+                    x2={line.x2}
+                    y2={line.y2}
+                    stroke={habit.colour}
+                    strokeWidth={line.isHomeBond ? 3.5 : 2.8}
+                    strokeOpacity={isComplete ? 0.45 : 0.28}
+                    strokeLinecap="round"
+                    style={{
+                      filter: `drop-shadow(0 0 8px ${habit.colour})`,
+                    }}
+                    aria-hidden="true"
+                  />
+                  {/* Inner Core Luminous Stroke */}
+                  <line
+                    x1={line.x1}
+                    y1={line.y1}
+                    x2={line.x2}
+                    y2={line.y2}
+                    stroke="#FFFFFF"
+                    strokeWidth={line.isHomeBond ? 1.6 : 1.3}
+                    strokeOpacity={0.85}
+                    strokeDasharray={line.isHomeBond ? '3 3' : 'none'}
+                    className="luminous-line-core"
+                    aria-hidden="true"
+                  />
+                </g>
               ))}
 
-              {/* Check-in Stars */}
+              {/* Check-In Stars with Soft Halos & Sparkle */}
               {stars.map((star) => {
-                const label = `${habit.name} check-in on ${star.date}${star.note ? `: ${star.note}` : ''}`;
+                const label = `${habit.name} star on ${star.date}${star.note ? `: ${star.note}` : ''}. Click to inspect.`;
                 return (
-                  <circle
-                    key={star.id}
-                    cx={star.x}
-                    cy={star.y}
-                    r={star.radius}
-                    fill={habit.colour}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={label}
-                    onClick={() => setSelectedStarHabit(habit)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setSelectedStarHabit(habit);
-                      }
-                    }}
-                    style={{
-                      cursor: 'pointer',
-                      filter: `drop-shadow(0 0 4px ${habit.colour})`,
-                      transition: 'transform 0.2s ease',
-                    }}
-                    className="celestial-star"
-                  />
+                  <g key={star.id} className="star-node">
+                    {/* Soft atmospheric halo */}
+                    <circle
+                      cx={star.x}
+                      cy={star.y}
+                      r={star.radius * 2.4}
+                      fill={habit.colour}
+                      opacity={0.3}
+                      aria-hidden="true"
+                    />
+
+                    {/* Star Core */}
+                    <circle
+                      cx={star.x}
+                      cy={star.y}
+                      r={star.radius}
+                      fill={habit.colour}
+                      stroke="#FFFFFF"
+                      strokeWidth={1}
+                      strokeOpacity={0.7}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={label}
+                      onClick={() => setSelectedStarHabit(habit)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedStarHabit(habit);
+                        }
+                      }}
+                      className="celestial-star"
+                      style={{
+                        cursor: 'pointer',
+                        filter: `drop-shadow(0 0 6px ${habit.colour})`,
+                        animationDelay: star.twinkleDelay,
+                        animationDuration: star.twinkleDuration,
+                      }}
+                    />
+
+                    {/* 4-point Diamond Cross Flare on check-in stars */}
+                    <path
+                      d={`M ${star.x} ${star.y - star.radius * 1.7} L ${star.x} ${star.y + star.radius * 1.7} M ${star.x - star.radius * 1.7} ${star.y} L ${star.x + star.radius * 1.7} ${star.y}`}
+                      stroke="#FFFFFF"
+                      strokeWidth="0.8"
+                      strokeOpacity="0.5"
+                      pointerEvents="none"
+                      aria-hidden="true"
+                    />
+                  </g>
                 );
               })}
 
-              {/* Home Star (Brightest anchor star) */}
+              {/* Home Star (Brightest Anchor Star with Rotating Corona & Flare) */}
               <g
                 role="button"
                 tabIndex={0}
@@ -288,52 +435,74 @@ export default function NightSky({
                 style={{ cursor: 'pointer' }}
                 className={`home-star-group ${isPulseTarget ? 'star-pulse-active' : ''}`}
               >
-                {/* Soft outer aura */}
+                {/* 1. Outer Pulsating Corona Aura */}
                 <circle
                   cx={center.x}
                   cy={center.y}
-                  r={homeRadius * 2.2}
+                  r={homeRadius * 2.4}
                   fill={habit.colour}
-                  opacity={isComplete ? 0.25 : 0.12}
+                  opacity={isComplete ? 0.35 : 0.18}
+                  className="home-star-corona"
                   style={{
-                    filter: `drop-shadow(0 0 16px ${habit.colour})`,
-                    animation: isComplete ? 'starPulse 2.5s infinite ease-in-out' : 'none',
+                    filter: `drop-shadow(0 0 20px ${habit.colour})`,
                   }}
+                  aria-hidden="true"
                 />
 
-                {/* Core home star */}
+                {/* 2. Middle Glow Ring */}
+                <circle
+                  cx={center.x}
+                  cy={center.y}
+                  r={homeRadius * 1.5}
+                  fill={habit.colour}
+                  opacity={0.35}
+                  style={{ filter: `drop-shadow(0 0 10px ${habit.colour})` }}
+                  aria-hidden="true"
+                />
+
+                {/* 3. Core Star Sphere with High-Luminance Gradient */}
                 <circle
                   cx={center.x}
                   cy={center.y}
                   r={homeRadius}
                   fill={`url(#starGrad_${habit.id})`}
                   stroke="#FFFFFF"
-                  strokeWidth={1.5}
-                  strokeOpacity={0.6}
-                  style={{ filter: `drop-shadow(0 0 8px ${habit.colour})` }}
+                  strokeWidth={1.8}
+                  strokeOpacity={0.8}
+                  style={{ filter: `drop-shadow(0 0 12px ${habit.colour})` }}
                 />
 
-                {/* Gradient definition for star */}
+                {/* 4. Astronomical 4-Point Star Rays */}
+                <path
+                  d={`M ${center.x} ${center.y - homeRadius * 2.2} L ${center.x} ${center.y + homeRadius * 2.2} M ${center.x - homeRadius * 2.2} ${center.y} L ${center.x + homeRadius * 2.2} ${center.y}`}
+                  stroke="#FFFFFF"
+                  strokeWidth="1.5"
+                  strokeOpacity="0.85"
+                  pointerEvents="none"
+                  aria-hidden="true"
+                />
+
+                {/* Home Star Gradient */}
                 <defs>
-                  <radialGradient id={`starGrad_${habit.id}`} cx="40%" cy="40%" r="60%">
+                  <radialGradient id={`starGrad_${habit.id}`} cx="35%" cy="35%" r="65%">
                     <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="60%" stopColor={habit.colour} />
-                    <stop offset="100%" stopColor={habit.colour} stopOpacity="0.8" />
+                    <stop offset="45%" stopColor={habit.colour} />
+                    <stop offset="100%" stopColor={habit.colour} stopOpacity="0.9" />
                   </radialGradient>
                 </defs>
 
-                {/* Habit Label Text below Home Star */}
+                {/* Habit Label Text */}
                 <text
                   x={center.x}
-                  y={center.y + homeRadius + 18}
+                  y={center.y + homeRadius + 20}
                   textAnchor="middle"
-                  fill="#EAF0FF"
-                  fontSize="12"
+                  fill="#FFFFFF"
+                  fontSize="12.5"
                   fontFamily="'Sora', sans-serif"
-                  fontWeight="600"
+                  fontWeight="700"
                   letterSpacing="0.04em"
                   style={{
-                    textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                    textShadow: '0 2px 10px rgba(0,0,0,0.95), 0 0 6px rgba(0,0,0,0.8)',
                     pointerEvents: 'none',
                     userSelect: 'none',
                   }}
@@ -341,24 +510,47 @@ export default function NightSky({
                   {habit.name}
                 </text>
 
-                {/* Streak Badge under label */}
+                {/* Streak Badge */}
                 <text
                   x={center.x}
-                  y={center.y + homeRadius + 32}
+                  y={center.y + homeRadius + 35}
                   textAnchor="middle"
-                  fill={habit.colour}
-                  fontSize="10"
+                  fill={isComplete ? '#FFD76A' : habit.colour}
+                  fontSize="10.5"
                   fontFamily="'Inter', sans-serif"
-                  fontWeight="600"
+                  fontWeight="700"
                   style={{
-                    textShadow: '0 1px 6px rgba(0,0,0,0.9)',
+                    textShadow: '0 1px 8px rgba(0,0,0,0.95)',
                     pointerEvents: 'none',
                     userSelect: 'none',
                   }}
                 >
-                  ★ {habit.current_streak}d streak
+                  {isComplete ? '✨ 7d CONSTELLATION' : `★ ${habit.current_streak}d streak`}
                 </text>
               </g>
+
+              {/* Celebratory Floating Stardust Sparkles for Completed 7-Day Constellations */}
+              {isComplete &&
+                sparkles.map((sp) => (
+                  <text
+                    key={sp.id}
+                    x={sp.x}
+                    y={sp.y}
+                    fill="#FFD76A"
+                    fontSize={sp.size}
+                    opacity="0.8"
+                    style={{
+                      animation: isTabVisible ? `celebrateSparkle 3s infinite ease-in-out` : 'none',
+                      animationDelay: sp.delay,
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                      filter: 'drop-shadow(0 0 6px #FFD76A)',
+                    }}
+                    aria-hidden="true"
+                  >
+                    ✦
+                  </text>
+                ))}
             </g>
           );
         })}
@@ -379,18 +571,18 @@ export default function NightSky({
             maxWidth: '340px',
             padding: '1.25rem',
             borderColor: `${selectedStarHabit.colour}55`,
-            boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 20px ${selectedStarHabit.colour}22`,
+            boxShadow: `0 8px 32px rgba(0,0,0,0.7), 0 0 24px ${selectedStarHabit.colour}33`,
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.65rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span
                 style={{
-                  width: '10px',
-                  height: '10px',
+                  width: '12px',
+                  height: '12px',
                   borderRadius: '50%',
                   backgroundColor: selectedStarHabit.colour,
-                  boxShadow: `0 0 8px ${selectedStarHabit.colour}`,
+                  boxShadow: `0 0 10px ${selectedStarHabit.colour}`,
                 }}
                 aria-hidden="true"
               />

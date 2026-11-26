@@ -659,6 +659,96 @@ p {
   }
 }
 
+@keyframes celestialTwinkle {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes celestialCorona {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.12);
+    opacity: 0.65;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.35;
+  }
+}
+
+@keyframes celestialLineShimmer {
+  0% {
+    stroke-dashoffset: 60;
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px currentColor);
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.7;
+  }
+}
+
+@keyframes nebulaFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-10px, 15px) scale(1.08);
+    opacity: 0.75;
+  }
+}
+
+@keyframes celebrateSparkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.6) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25) rotate(45deg);
+  }
+}
+
+/* Luminous SVG Styles */
+.celestial-star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: celestialTwinkle 3.5s infinite ease-in-out;
+}
+
+.home-star-corona {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: celestialCorona 12s infinite linear;
+}
+
+.luminous-line-core {
+  stroke-linecap: round;
+}
+
+.constellation-completed .luminous-line-core {
+  stroke-dasharray: 6 3;
+  animation: celestialLineShimmer 4s infinite linear;
+}
+
+.nebula-mesh {
+  animation: nebulaFloat 18s infinite ease-in-out;
+  transform-origin: center;
+}
+
 @keyframes gentleFadeIn {
   from {
     opacity: 0;
@@ -682,7 +772,11 @@ p {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .brand-icon {
+  .brand-icon,
+  .celestial-star,
+  .home-star-corona,
+  .constellation-completed .luminous-line-core,
+  .nebula-mesh {
     animation: none !important;
   }
 }
