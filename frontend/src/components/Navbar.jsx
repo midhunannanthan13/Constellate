@@ -40,6 +40,16 @@ export default function Navbar() {
               </li>
               <li role="none">
                 <NavLink
+                  to="/habits"
+                  role="menuitem"
+                  className={({ isActive }) => `nav-item-btn ${isActive ? 'active' : ''}`}
+                >
+                  <span className="nav-dot" aria-hidden="true"></span>
+                  <span>Habits</span>
+                </NavLink>
+              </li>
+              <li role="none">
+                <NavLink
                   to="/preview"
                   role="menuitem"
                   className={({ isActive }) => `nav-item-btn ${isActive ? 'active' : ''}`}

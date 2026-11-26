@@ -31,6 +31,7 @@ INSTALLED_APPS = [
 
     # Constellate apps
     'accounts.apps.AccountsConfig',
+    'habits.apps.HabitsConfig',
 ]
 
 MIDDLEWARE = [

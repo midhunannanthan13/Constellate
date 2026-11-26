@@ -75,3 +75,58 @@ export const authApi = {
       data: { refresh },
     }),
 };
+
+export const habitsApi = {
+  list: (token, { archived = false } = {}) =>
+    apiRequest(`/habits/${archived ? '?archived=true' : ''}`, {
+      method: 'GET',
+      token,
+    }),
+
+  get: (token, id) =>
+    apiRequest(`/habits/${id}/`, {
+      method: 'GET',
+      token,
+    }),
+
+  create: (token, payload) =>
+    apiRequest('/habits/', {
+      method: 'POST',
+      data: payload,
+      token,
+    }),
+
+  update: (token, id, payload) =>
+    apiRequest(`/habits/${id}/`, {
+      method: 'PATCH',
+      data: payload,
+      token,
+    }),
+
+  archive: (token, id) =>
+    apiRequest(`/habits/${id}/archive/`, {
+      method: 'POST',
+      token,
+    }),
+
+  delete: (token, id) =>
+    apiRequest(`/habits/${id}/`, {
+      method: 'DELETE',
+      token,
+    }),
+
+  checkin: (token, id, { date, note } = {}) =>
+    apiRequest(`/habits/${id}/checkin/`, {
+      method: 'POST',
+      data: { date, note },
+      token,
+    }),
+
+  uncheck: (token, id, { date } = {}) =>
+    apiRequest(`/habits/${id}/uncheck/`, {
+      method: 'POST',
+      data: { date },
+      token,
+    }),
+};
+

@@ -10,6 +10,8 @@ import Welcome from './pages/Welcome';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import MySky from './pages/MySky';
+import Habits from './pages/Habits';
+import HabitDetail from './pages/HabitDetail';
 import StylePreview from './components/StylePreview';
 import './index.css';
 
@@ -36,6 +38,24 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <MySky />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected Habits Management & Calendar */}
+            <Route
+              path="/habits"
+              element={
+                <ProtectedRoute>
+                  <Habits />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/habits/:id"
+              element={
+                <ProtectedRoute>
+                  <HabitDetail />
                 </ProtectedRoute>
               }
             />
