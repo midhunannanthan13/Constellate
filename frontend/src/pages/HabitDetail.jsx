@@ -37,15 +37,21 @@ export default function HabitDetail() {
     fetchHabitDetail();
   }, [fetchHabitDetail]);
 
-  // Construct the last 30 days array up to today
+  // Construct the last 30 days array up to today using local timezone
   const generateLast30Days = useCallback(() => {
     const days = [];
     const today = new Date();
+    // Normalize to midnight local time
+    today.setHours(0, 0, 0, 0);
 
     for (let i = 29; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const dateNum = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${dateNum}`;
       const isToday = i === 0;
 
       // Find matching checkin in habit's last 30 days records
@@ -196,6 +202,26 @@ export default function HabitDetail() {
           </div>
         </div>
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          style={{
+            padding: '0.75rem 1rem',
+            background: 'var(--error-bg)',
+            border: '1px solid var(--error)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--error)',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+          }}
+        >
+          <span aria-hidden="true">⚠️</span>
+          <span>{error}</span>
+        </div>
+      )}
 
       {actionSuccess && (
         <div

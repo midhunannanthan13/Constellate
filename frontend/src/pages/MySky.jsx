@@ -1,16 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { habitsApi } from '../services/api';
 
 export default function MySky() {
-  const { user } = useAuth();
+  const { user, tokens } = useAuth();
+  const token = tokens?.access;
   const [copied, setCopied] = useState(false);
+  const [habits, setHabits] = useState([]);
+  const [loadingHabits, setLoadingHabits] = useState(true);
+
+  useEffect(() => {
+    if (!token) return;
+    habitsApi
+      .list(token)
+      .then((data) => setHabits(data || []))
+      .catch(() => setHabits([]))
+      .finally(() => setLoadingHabits(false));
+  }, [token]);
 
   const copyFriendCode = () => {
     if (user?.friend_code) {
       navigator.clipboard?.writeText(user.friend_code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleQuickCheckin = async (habit) => {
+    try {
+      if (habit.is_checked_today) {
+        await habitsApi.uncheck(token, habit.id);
+      } else {
+        await habitsApi.checkin(token, habit.id);
+      }
+      const updated = await habitsApi.list(token);
+      setHabits(updated);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -82,6 +109,88 @@ export default function MySky() {
         </div>
       </div>
 
+      {/* Habits in Sky Overview */}
+      <div className="glass-card glow-teal" style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '0.25rem' }}>Your Active Habit Stars</h2>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+              Check in daily to build your 7-day constellations.
+            </p>
+          </div>
+          <Link to="/habits" className="btn btn-primary btn-sm">
+            Manage All Habits →
+          </Link>
+        </div>
+
+        {loadingHabits ? (
+          <p style={{ color: 'var(--text-muted)' }}>Loading stars...</p>
+        ) : habits.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              No habit stars in your sky yet.
+            </p>
+            <Link to="/habits" className="btn btn-primary btn-sm">
+              Light Your First Star ✦
+            </Link>
+          </div>
+        ) : (
+          <div className="grid-2">
+            {habits.map((h) => (
+              <div
+                key={h.id}
+                className="glass-card glass-card-interactive"
+                style={{
+                  padding: '1.25rem',
+                  borderColor: `${h.colour}33`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                    <span
+                      style={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        backgroundColor: h.colour,
+                        boxShadow: `0 0 8px ${h.colour}`,
+                      }}
+                      aria-hidden="true"
+                    />
+                    <strong style={{ fontSize: '1.1rem' }}>{h.name}</strong>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.8rem' }}>
+                    <span className="badge badge-gold" style={{ padding: '0.15rem 0.5rem' }}>
+                      ★ Streak: {h.current_streak}d
+                    </span>
+                    <span className="badge badge-teal" style={{ padding: '0.15rem 0.5rem' }}>
+                      Goal: {h.days_per_week_goal}d/wk
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${h.is_checked_today ? 'btn-teal' : 'btn-outline'}`}
+                    onClick={() => handleQuickCheckin(h)}
+                    aria-label={`Toggle check-in for ${h.name}`}
+                  >
+                    {h.is_checked_today ? '✓ Done' : '✦ Check-in'}
+                  </button>
+                  <Link to={`/habits/${h.id}`} className="btn btn-secondary btn-sm" aria-label={`View ${h.name} details`}>
+                    Strip →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Account Details & Quick Overview Card */}
       <div className="grid-2">
         <div className="glass-card glow-teal">
@@ -107,13 +216,16 @@ export default function MySky() {
         </div>
 
         <div className="glass-card glow-violet">
-          <h3 style={{ marginBottom: '0.75rem' }}>Stage 4 Preview: Habits & Constellations</h3>
+          <h3 style={{ marginBottom: '0.75rem' }}>Habits & Constellations Ready</h3>
           <p style={{ fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-            Authentication is now complete! In Stage 4, you will create habits (habits table), track daily check-ins (check_ins table), and compute automatic 7-day streaks.
+            Your habit management system and 30-day calendar strips are fully live. Add, edit, check in, and view streaks on your Habits page.
           </p>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <Link to="/habits" className="btn btn-primary btn-sm">
+              Go to Habits Page ✦
+            </Link>
             <Link to="/preview" className="btn btn-outline btn-sm">
-              View Design System Showcase ↗
+              Design System Showcase ↗
             </Link>
           </div>
         </div>
