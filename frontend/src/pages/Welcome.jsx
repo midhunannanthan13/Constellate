@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import usePageTitle from '../hooks/usePageTitle';
 
 export default function Welcome() {
+  usePageTitle('Welcome');
   const { isAuthenticated, user } = useAuth();
 
   return (

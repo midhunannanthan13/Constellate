@@ -32,6 +32,36 @@ function HomeRoute() {
   return isAuthenticated ? <Navigate to="/sky" replace /> : <Welcome />;
 }
 
+function OfflineBanner() {
+  const { apiOffline, retryAuth } = useAuth();
+  if (!apiOffline) return null;
+  return (
+    <div className="container" style={{ paddingBottom: 0 }}>
+      <div
+        role="alert"
+        className="glass-card"
+        style={{
+          padding: '0.9rem 1.25rem',
+          borderColor: 'var(--warning)',
+          background: 'var(--warning-bg)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}
+      >
+        <span style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+          ⚠️ <strong>Backend server unreachable:</strong> Cannot connect to the Constellate API right now. Please make sure the Django server is running.
+        </span>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={retryAuth}>
+          Retry Connection
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -41,6 +71,7 @@ export default function App() {
       {/* Main Application Container */}
       <div className="app-wrapper">
         <Navbar />
+        <OfflineBanner />
 
         <main id="main-content" tabIndex={-1}>
           <Routes>

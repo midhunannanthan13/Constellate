@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { skyApi, habitsApi } from '../services/api';
 import NightSky from '../components/NightSky';
+import usePageTitle from '../hooks/usePageTitle';
 
 export default function MySky() {
+  usePageTitle('My Sky');
   const { user, tokens } = useAuth();
   const token = tokens?.access;
 

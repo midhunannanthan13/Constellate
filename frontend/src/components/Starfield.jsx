@@ -18,7 +18,8 @@ export default function Starfield() {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let prefersReducedMotion = mq.matches;
 
     // Generate balanced star distribution
     const numStars = Math.floor((width * height) / 3200); // Responsive star density
@@ -92,11 +93,19 @@ export default function Starfield() {
       render();
     };
 
+    const handleMotionChange = (e) => {
+      prefersReducedMotion = e.matches;
+      cancelAnimationFrame(animationFrameId);
+      render();
+    };
+
     window.addEventListener('resize', handleResize);
+    mq.addEventListener?.('change', handleMotionChange);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
+      mq.removeEventListener?.('change', handleMotionChange);
     };
   }, []);
 

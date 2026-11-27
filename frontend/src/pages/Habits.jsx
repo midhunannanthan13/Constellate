@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { habitsApi } from '../services/api';
+import usePageTitle from '../hooks/usePageTitle';
 
 const AURORA_COLORS = [
   { hex: '#FFD76A', name: 'Star Gold' },
@@ -13,7 +14,9 @@ const AURORA_COLORS = [
 ];
 
 export default function Habits() {
+  usePageTitle('Habits');
   const { tokens } = useAuth();
+  const modalTriggerRef = useRef(null);
   const token = tokens?.access;
 
   const [habits, setHabits] = useState([]);
@@ -53,7 +56,22 @@ export default function Habits() {
     fetchHabits();
   }, [fetchHabits]);
 
+  const closeModal = useCallback(() => {
+    setIsModalOpen(false);
+    setTimeout(() => modalTriggerRef.current?.focus(), 0);
+  }, []);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isModalOpen, closeModal]);
+
   const openCreateModal = () => {
+    modalTriggerRef.current = document.activeElement;
     setEditingHabit(null);
     setFormData({ name: '', colour: '#FFD76A', days_per_week_goal: 7 });
     setModalError('');
@@ -61,6 +79,7 @@ export default function Habits() {
   };
 
   const openEditModal = (habit) => {
+    modalTriggerRef.current = document.activeElement;
     setEditingHabit(habit);
     setFormData({
       name: habit.name,
@@ -409,7 +428,7 @@ export default function Habits() {
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
-                onClick={() => setIsModalOpen(false)}
+                onClick={closeModal}
                 aria-label="Close dialog"
               >
                 ✕
@@ -518,7 +537,7 @@ export default function Habits() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.75rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
+                <button type="button" className="btn btn-secondary" onClick={closeModal}>
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={submitting}>

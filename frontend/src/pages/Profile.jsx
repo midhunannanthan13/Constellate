@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { badgesApi } from '../services/api';
+import usePageTitle from '../hooks/usePageTitle';
 
 function formatReadableDate(isoDate) {
   if (!isoDate) return '';
@@ -11,6 +12,7 @@ function formatReadableDate(isoDate) {
 }
 
 export default function Profile() {
+  usePageTitle('Profile & Badges');
   const { user, tokens } = useAuth();
   const token = tokens?.access;
 
@@ -189,8 +191,7 @@ export default function Profile() {
                   className="glass-card"
                   style={{
                     padding: '1.5rem',
-                    opacity: badge.earned ? 1 : 0.58,
-                    borderColor: badge.earned ? `${badge.colour}66` : 'var(--glass-border)',
+                    borderColor: badge.earned ? `${badge.colour}66` : 'rgba(255, 255, 255, 0.1)',
                     boxShadow: badge.earned
                       ? badge.is_new
                         ? `0 0 32px ${badge.colour}55, inset 0 0 24px ${badge.colour}22`
@@ -198,7 +199,7 @@ export default function Profile() {
                       : 'none',
                     background: badge.earned
                       ? `linear-gradient(135deg, ${badge.colour}18 0%, rgba(255, 255, 255, 0.05) 100%)`
-                      : 'rgba(255, 255, 255, 0.02)',
+                      : 'rgba(255, 255, 255, 0.025)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',

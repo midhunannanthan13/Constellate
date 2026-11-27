@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import usePageTitle from '../hooks/usePageTitle';
 
 /**
  * StylePreview Component
  * Interactive showcase for the Constellate "Aurora Night" design system.
  */
 export default function StylePreview({ activeSection }) {
+  usePageTitle('Aurora Night Design System');
   const [formState, setFormState] = useState({
     habitName: 'Morning Astronomy Reading',
     category: 'mindfulness',
@@ -40,9 +42,9 @@ export default function StylePreview({ activeSection }) {
       {/* --- Section: Hero / Header --- */}
       {(activeSection === 'preview' || !activeSection) && (
         <section className="glass-card glow-gold" style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
             <span className="badge badge-gold">✦ DESIGN SYSTEM</span>
-            <span className="badge badge-teal">WCAG AAA COMPLIANT</span>
+            <span className="badge badge-teal">Built with accessibility in mind</span>
           </div>
 
           <h1 className="text-gradient" style={{ marginBottom: '0.75rem' }}>
@@ -136,7 +138,7 @@ export default function StylePreview({ activeSection }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
               <div>
                 <span className="badge badge-gold" style={{ marginBottom: '0.35rem' }}>H1 — Sora Bold / 40-52px</span>
-                <h1>Your habits, written in stars.</h1>
+                <p className="specimen-h1">Your habits, written in stars.</p>
               </div>
 
               <div>

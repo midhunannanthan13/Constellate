@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { friendsApi } from '../services/api';
 import NightSky from '../components/NightSky';
+import usePageTitle from '../hooks/usePageTitle';
 
 export default function FriendSky() {
   const { friendId } = useParams();
@@ -10,6 +11,7 @@ export default function FriendSky() {
   const token = tokens?.access;
 
   const [skyData, setSkyData] = useState(null);
+  usePageTitle(skyData?.friend?.username ? `${skyData.friend.username}'s Sky` : "Friend's Sky");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 

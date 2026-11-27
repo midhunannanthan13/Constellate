@@ -9,11 +9,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [tokens, setTokens] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [apiOffline, setApiOffline] = useState(false);
 
   // Clean sign out
   const signout = useCallback(() => {
     setUser(null);
     setTokens(null);
+    setApiOffline(false);
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
@@ -21,6 +23,7 @@ export function AuthProvider({ children }) {
   const saveAuthSession = useCallback((authTokens, userData) => {
     setTokens(authTokens);
     setUser(userData);
+    setApiOffline(false);
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({ tokens: authTokens, user: userData })
@@ -28,54 +31,65 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Verify and refresh session on boot or refresh
-  useEffect(() => {
-    const initAuth = async () => {
+  const initAuth = useCallback(async () => {
+    setLoading(true);
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        setLoading(false);
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!parsed?.tokens?.access) {
+        setLoading(false);
+        return;
+      }
+
+      // Test access token with profile endpoint
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) {
-          setLoading(false);
-          return;
-        }
-
-        const parsed = JSON.parse(raw);
-        if (!parsed?.tokens?.access) {
-          setLoading(false);
-          return;
-        }
-
-        // Test access token with profile endpoint
-        try {
-          const profile = await authApi.getProfile(parsed.tokens.access);
-          setUser(profile);
+        const profile = await authApi.getProfile(parsed.tokens.access);
+        setUser(profile);
+        setTokens(parsed.tokens);
+        setApiOffline(false);
+      } catch (profileErr) {
+        if (profileErr.status === 503) {
+          // Backend is stopped/unreachable: keep stored user/tokens and show friendly offline banner
+          setUser(parsed.user || null);
           setTokens(parsed.tokens);
-        } catch (profileErr) {
-          // If access token expired (401), try refresh token
-          if (profileErr.status === 401 && parsed.tokens.refresh) {
-            try {
-              const refreshRes = await authApi.refreshToken(parsed.tokens.refresh);
-              const newTokens = {
-                access: refreshRes.access,
-                refresh: refreshRes.refresh || parsed.tokens.refresh,
-              };
-              const profile = await authApi.getProfile(newTokens.access);
-              saveAuthSession(newTokens, profile);
-            } catch {
-              // Refresh failed, clean session
+          setApiOffline(true);
+        } else if (profileErr.status === 401 && parsed.tokens.refresh) {
+          try {
+            const refreshRes = await authApi.refreshToken(parsed.tokens.refresh);
+            const newTokens = {
+              access: refreshRes.access,
+              refresh: refreshRes.refresh || parsed.tokens.refresh,
+            };
+            const profile = await authApi.getProfile(newTokens.access);
+            saveAuthSession(newTokens, profile);
+          } catch (refreshErr) {
+            if (refreshErr.status === 503) {
+              setUser(parsed.user || null);
+              setTokens(parsed.tokens);
+              setApiOffline(true);
+            } else {
               signout();
             }
-          } else {
-            signout();
           }
+        } else {
+          signout();
         }
-      } catch (e) {
-        signout();
-      } finally {
-        setLoading(false);
       }
-    };
-
-    initAuth();
+    } catch {
+      signout();
+    } finally {
+      setLoading(false);
+    }
   }, [saveAuthSession, signout]);
+
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
 
   // Sign In handler
   const signin = async (credentials) => {
@@ -98,6 +112,8 @@ export function AuthProvider({ children }) {
         tokens,
         isAuthenticated: !!user,
         loading,
+        apiOffline,
+        retryAuth: initAuth,
         signin,
         signup,
         signout,

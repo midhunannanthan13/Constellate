@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { friendsApi } from '../services/api';
+import usePageTitle from '../hooks/usePageTitle';
 
 export default function Friends() {
+  usePageTitle('Friends');
   const { user, tokens } = useAuth();
   const token = tokens?.access;
 

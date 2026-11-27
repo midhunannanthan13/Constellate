@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import usePageTitle from '../hooks/usePageTitle';
 
 export default function SignIn() {
+  usePageTitle('Sign In');
   const { signin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

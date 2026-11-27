@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { habitsApi } from '../services/api';
+import usePageTitle from '../hooks/usePageTitle';
 
 export default function HabitDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { tokens } = useAuth();
   const token = tokens?.access;
+  const modalTriggerRef = useRef(null);
 
   const [habit, setHabit] = useState(null);
+  usePageTitle(habit?.name || 'Habit Detail');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
@@ -75,6 +78,20 @@ export default function HabitDetail() {
 
   const thirtyDays = generateLast30Days();
 
+  const closeDateModal = useCallback(() => {
+    setActiveDateModal(null);
+    setTimeout(() => modalTriggerRef.current?.focus(), 0);
+  }, []);
+
+  useEffect(() => {
+    if (!activeDateModal) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') closeDateModal();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeDateModal, closeDateModal]);
+
   const handleDayClick = async (day) => {
     if (day.isChecked) {
       // Un-check
@@ -88,6 +105,7 @@ export default function HabitDetail() {
       }
     } else {
       // Open dialog to allow adding note or instant check-in
+      modalTriggerRef.current = document.activeElement;
       setActiveDateModal(day);
       setNoteText('');
     }
@@ -443,7 +461,7 @@ export default function HabitDetail() {
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => setActiveDateModal(null)}
+                  onClick={closeDateModal}
                 >
                   Cancel
                 </button>

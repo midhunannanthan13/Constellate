@@ -36,6 +36,30 @@ export default function NightSky({
   const [dimensions, setDimensions] = useState({ width: 960, height: 600 });
   const [selectedStarHabit, setSelectedStarHabit] = useState(null);
   const [isTabVisible, setIsTabVisible] = useState(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false
+  );
+
+  // Listen for live reduced-motion preference changes
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = (e) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
+
+  // Close star popover on Escape key
+  useEffect(() => {
+    if (!selectedStarHabit) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setSelectedStarHabit(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedStarHabit]);
 
   // Pause animations when browser tab is inactive for peak efficiency
   useEffect(() => {
@@ -443,9 +467,10 @@ export default function NightSky({
                   r={homeRadius * 2.4}
                   fill={habit.colour}
                   opacity={isComplete ? 0.35 : 0.18}
-                  className="home-star-corona"
+                  className={prefersReducedMotion ? '' : 'home-star-corona'}
                   style={{
                     filter: `drop-shadow(0 0 20px ${habit.colour})`,
+                    animation: prefersReducedMotion ? 'none' : undefined,
                   }}
                   aria-hidden="true"
                 />
@@ -541,7 +566,7 @@ export default function NightSky({
                     fontSize={sp.size}
                     opacity="0.8"
                     style={{
-                      animation: isTabVisible ? `celebrateSparkle 3s infinite ease-in-out` : 'none',
+                      animation: isTabVisible && !prefersReducedMotion ? `celebrateSparkle 3s infinite ease-in-out` : 'none',
                       animationDelay: sp.delay,
                       pointerEvents: 'none',
                       userSelect: 'none',
@@ -566,8 +591,9 @@ export default function NightSky({
           className="glass-card fade-in"
           style={{
             position: 'absolute',
-            bottom: '1.25rem',
-            left: '1.25rem',
+            bottom: '1rem',
+            left: '1rem',
+            right: '1rem',
             zIndex: 50,
             maxWidth: '340px',
             padding: '1.25rem',
