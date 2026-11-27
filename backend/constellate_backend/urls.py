@@ -15,5 +15,6 @@ urlpatterns = [
     path('api/health/', api_health_check, name='api-health'),
     path('api/auth/', include('accounts.urls')),
     path('api/friends/', include('friends.urls')),
+    path('api/badges/', include('badges.urls')),
     path('api/', include('habits.urls')),
 ]

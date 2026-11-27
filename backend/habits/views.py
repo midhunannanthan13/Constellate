@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from django.db import IntegrityError, connection
 from .models import Habit, CheckIn
 from .serializers import HabitSerializer, HabitDetailSerializer, CheckInSerializer
+from badges.services import evaluate_and_award_badges
 
 class HabitViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -98,6 +99,7 @@ class HabitViewSet(viewsets.ModelViewSet):
             )
 
         current_streak, best_streak = habit.calculate_streaks()
+        newly_earned = evaluate_and_award_badges(request.user)
 
         return Response(
             {
@@ -105,6 +107,7 @@ class HabitViewSet(viewsets.ModelViewSet):
                 "checkin": CheckInSerializer(checkin).data,
                 "current_streak": current_streak,
                 "best_streak": best_streak,
+                "newly_earned_badges": newly_earned,
             },
             status=status.HTTP_201_CREATED
         )

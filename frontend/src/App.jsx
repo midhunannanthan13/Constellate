@@ -15,6 +15,7 @@ import HabitDetail from './pages/HabitDetail';
 import WeeklyReport from './pages/WeeklyReport';
 import Friends from './pages/Friends';
 import FriendSky from './pages/FriendSky';
+import Profile from './pages/Profile';
 import StylePreview from './components/StylePreview';
 import './index.css';
 
@@ -96,6 +97,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <FriendSky />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
                 </ProtectedRoute>
               }
             />

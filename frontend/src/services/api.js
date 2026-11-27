@@ -185,4 +185,19 @@ export const friendsApi = {
     }),
 };
 
+export const badgesApi = {
+  list: (token) =>
+    apiRequest('/badges/', {
+      method: 'GET',
+      token,
+    }),
+
+  markSeen: (token, badge_types = []) =>
+    apiRequest('/badges/seen/', {
+      method: 'POST',
+      data: { badge_types },
+      token,
+    }),
+};
+
 

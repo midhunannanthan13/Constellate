@@ -109,9 +109,15 @@ export default function Navbar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           {isAuthenticated ? (
             <>
-              <span className="badge badge-gold" title={`Logged in as ${user?.username} (${user?.friend_code})`}>
+              <NavLink
+                to="/profile"
+                className="badge badge-gold"
+                style={{ textDecoration: 'none' }}
+                title={`View Profile & Badges for ${user?.username} (${user?.friend_code})`}
+                aria-label={`View profile and badges for ${user?.username}`}
+              >
                 <span aria-hidden="true">★</span> {user?.username}
-              </span>
+              </NavLink>
               <button
                 type="button"
                 className="btn btn-outline btn-sm"

@@ -59,7 +59,11 @@ export default function MySky() {
         await habitsApi.uncheck(token, habit.id);
       } else {
         const res = await habitsApi.checkin(token, habit.id);
-        if (res.current_streak === 7) {
+        if (res.newly_earned_badges && res.newly_earned_badges.length > 0) {
+          const badgeNames = res.newly_earned_badges.map((b) => b.name).join(', ');
+          setToastMessage(`★ Badge Unlocked: ${badgeNames}! Visit your Profile to view your Badge Shelf.`);
+          setTimeout(() => setToastMessage(null), 6000);
+        } else if (res.current_streak === 7) {
           setToastMessage(`✦ Constellation Formed! 7-day streak achieved for ${habit.name}!`);
           setTimeout(() => setToastMessage(null), 6000);
         }

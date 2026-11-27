@@ -19,6 +19,7 @@ export default function Habits() {
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [badgeToast, setBadgeToast] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
 
   // Modal State
@@ -120,7 +121,12 @@ export default function Habits() {
       if (habit.is_checked_today) {
         await habitsApi.uncheck(token, habit.id);
       } else {
-        await habitsApi.checkin(token, habit.id);
+        const res = await habitsApi.checkin(token, habit.id);
+        if (res.newly_earned_badges && res.newly_earned_badges.length > 0) {
+          const names = res.newly_earned_badges.map((b) => b.name).join(', ');
+          setBadgeToast(`★ Badge Unlocked: ${names}!`);
+          setTimeout(() => setBadgeToast(null), 6000);
+        }
       }
       fetchHabits();
     } catch (err) {
@@ -156,6 +162,42 @@ export default function Habits() {
           </div>
         </div>
       </div>
+
+      {/* Badge Toast Banner */}
+      {badgeToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fade-in"
+          style={{
+            padding: '0.9rem 1.25rem',
+            background: 'linear-gradient(135deg, rgba(255, 215, 106, 0.2), rgba(139, 124, 255, 0.2))',
+            border: '1.5px solid var(--star-gold)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--text-primary)',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '0.75rem',
+          }}
+        >
+          <span>
+            <strong style={{ color: 'var(--star-gold)' }}>{badgeToast}</strong> —{' '}
+            <Link to="/profile" style={{ color: 'var(--aurora-teal)', fontWeight: 600 }}>
+              View Badge Shelf →
+            </Link>
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => setBadgeToast(null)}
+            aria-label="Dismiss badge notification"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Global Error Banner */}
       {error && (

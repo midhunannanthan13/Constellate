@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'habits.apps.HabitsConfig',
     'friends.apps.FriendsConfig',
+    'badges.apps.BadgesConfig',
 ]
 
 MIDDLEWARE = [
