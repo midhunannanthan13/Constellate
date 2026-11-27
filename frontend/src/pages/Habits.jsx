@@ -228,8 +228,8 @@ export default function Habits() {
             >
               <div>
                 {/* Card Top */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.65rem', marginBottom: '0.85rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
                     <div
                       style={{
                         width: '14px',
@@ -237,10 +237,11 @@ export default function Habits() {
                         borderRadius: '50%',
                         backgroundColor: habit.colour,
                         boxShadow: `0 0 10px ${habit.colour}`,
+                        flexShrink: 0,
                       }}
                       aria-hidden="true"
                     />
-                    <h2 style={{ fontSize: '1.3rem', color: 'var(--text-primary)' }}>{habit.name}</h2>
+                    <h2 style={{ fontSize: '1.3rem', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{habit.name}</h2>
                   </div>
 
                   <span
@@ -249,9 +250,11 @@ export default function Habits() {
                       background: `${habit.colour}22`,
                       color: habit.colour,
                       borderColor: `${habit.colour}44`,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
                     }}
                   >
-                    Goal: {habit.days_per_week_goal}d / wk
+                    Goal: {habit.days_per_week_goal} {habit.days_per_week_goal === 1 ? 'day' : 'days'} per week
                   </span>
                 </div>
 
@@ -270,24 +273,32 @@ export default function Habits() {
               </div>
 
               {/* Bottom Actions */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
-                {/* Today Check-in Toggle Button */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
+                {/* Full-width single-line Today Check-in Toggle Button */}
                 <button
                   type="button"
                   className={`btn btn-sm ${habit.is_checked_today ? 'btn-teal' : 'btn-outline'}`}
                   onClick={() => handleQuickCheckinToggle(habit)}
                   aria-label={`${habit.name}: ${habit.is_checked_today ? 'Checked in today. Click to un-check.' : 'Click to check in today'}`}
+                  style={{ width: '100%', whiteSpace: 'nowrap', padding: '0.6rem 1rem' }}
                 >
                   <span aria-hidden="true">{habit.is_checked_today ? '✓' : '✦'}</span>
                   <span>{habit.is_checked_today ? 'Checked In Today' : 'Check In Today'}</span>
                 </button>
 
-                {/* Auxiliary links */}
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                {/* Evenly spaced secondary actions grid */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(84px, 1fr))',
+                    gap: '0.5rem',
+                  }}
+                >
                   <Link
                     to={`/habits/${habit.id}`}
                     className="btn btn-secondary btn-sm"
                     aria-label={`View 30-day calendar strip for ${habit.name}`}
+                    style={{ whiteSpace: 'nowrap' }}
                   >
                     Calendar ↗
                   </Link>
@@ -296,6 +307,7 @@ export default function Habits() {
                     className="btn btn-secondary btn-sm"
                     onClick={() => openEditModal(habit)}
                     aria-label={`Edit ${habit.name}`}
+                    style={{ whiteSpace: 'nowrap' }}
                   >
                     Edit
                   </button>
@@ -305,6 +317,7 @@ export default function Habits() {
                     onClick={() => handleToggleArchive(habit)}
                     aria-label={habit.archived ? `Restore ${habit.name}` : `Archive ${habit.name}`}
                     title={habit.archived ? 'Restore to sky' : 'Archive habit'}
+                    style={{ whiteSpace: 'nowrap' }}
                   >
                     {habit.archived ? 'Restore' : 'Archive'}
                   </button>
@@ -314,8 +327,9 @@ export default function Habits() {
                     onClick={() => handleDeleteHabit(habit)}
                     aria-label={`Delete ${habit.name}`}
                     title="Delete permanently"
+                    style={{ whiteSpace: 'nowrap' }}
                   >
-                    ✕
+                    Delete
                   </button>
                 </div>
               </div>
