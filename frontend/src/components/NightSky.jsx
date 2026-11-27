@@ -30,6 +30,7 @@ export default function NightSky({
   habits = [],
   onCheckinToggle,
   checkingInId = null,
+  readOnly = false,
 }) {
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 960, height: 600 });
@@ -601,33 +602,40 @@ export default function NightSky({
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: readOnly ? '0.25rem' : '1rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
             <span className="badge badge-gold">★ Current: {selectedStarHabit.current_streak}d</span>
             <span className="badge badge-teal">✦ Best: {selectedStarHabit.best_streak}d</span>
+            {readOnly && (
+              <span className="badge badge-violet">
+                {selectedStarHabit.is_checked_today ? '✓ Checked in today' : '○ Pending today'}
+              </span>
+            )}
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button
-              type="button"
-              className={`btn btn-sm ${selectedStarHabit.is_checked_today ? 'btn-teal' : 'btn-primary'}`}
-              onClick={async () => {
-                await onCheckinToggle(selectedStarHabit);
-                setSelectedStarHabit((prev) =>
-                  prev ? { ...prev, is_checked_today: !prev.is_checked_today } : null
-                );
-              }}
-              style={{ flex: 1 }}
-            >
-              {selectedStarHabit.is_checked_today ? '✓ Checked In' : '✦ Check In Today'}
-            </button>
-            <Link
-              to={`/habits/${selectedStarHabit.id}`}
-              className="btn btn-secondary btn-sm"
-              aria-label={`View 30-day calendar for ${selectedStarHabit.name}`}
-            >
-              Calendar ↗
-            </Link>
-          </div>
+          {!readOnly && (
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <button
+                type="button"
+                className={`btn btn-sm ${selectedStarHabit.is_checked_today ? 'btn-teal' : 'btn-primary'}`}
+                onClick={async () => {
+                  await onCheckinToggle(selectedStarHabit);
+                  setSelectedStarHabit((prev) =>
+                    prev ? { ...prev, is_checked_today: !prev.is_checked_today } : null
+                  );
+                }}
+                style={{ flex: 1 }}
+              >
+                {selectedStarHabit.is_checked_today ? '✓ Checked In' : '✦ Check In Today'}
+              </button>
+              <Link
+                to={`/habits/${selectedStarHabit.id}`}
+                className="btn btn-secondary btn-sm"
+                aria-label={`View 30-day calendar for ${selectedStarHabit.name}`}
+              >
+                Calendar ↗
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

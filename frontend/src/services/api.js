@@ -146,4 +146,43 @@ export const reportsApi = {
     }),
 };
 
+export const friendsApi = {
+  overview: (token) =>
+    apiRequest('/friends/', {
+      method: 'GET',
+      token,
+    }),
+
+  sendRequest: (token, friend_code) =>
+    apiRequest('/friends/request/', {
+      method: 'POST',
+      data: { friend_code },
+      token,
+    }),
+
+  accept: (token, id) =>
+    apiRequest(`/friends/requests/${id}/accept/`, {
+      method: 'POST',
+      token,
+    }),
+
+  decline: (token, id) =>
+    apiRequest(`/friends/requests/${id}/decline/`, {
+      method: 'POST',
+      token,
+    }),
+
+  remove: (token, id) =>
+    apiRequest(`/friends/${id}/`, {
+      method: 'DELETE',
+      token,
+    }),
+
+  getFriendSky: (token, friendId) =>
+    apiRequest(`/friends/${friendId}/sky/`, {
+      method: 'GET',
+      token,
+    }),
+};
+
 

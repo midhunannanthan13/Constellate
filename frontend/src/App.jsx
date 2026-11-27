@@ -13,6 +13,8 @@ import MySky from './pages/MySky';
 import Habits from './pages/Habits';
 import HabitDetail from './pages/HabitDetail';
 import WeeklyReport from './pages/WeeklyReport';
+import Friends from './pages/Friends';
+import FriendSky from './pages/FriendSky';
 import StylePreview from './components/StylePreview';
 import './index.css';
 
@@ -78,6 +80,22 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <WeeklyReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/friends"
+              element={
+                <ProtectedRoute>
+                  <Friends />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/friends/:friendId/sky"
+              element={
+                <ProtectedRoute>
+                  <FriendSky />
                 </ProtectedRoute>
               }
             />
