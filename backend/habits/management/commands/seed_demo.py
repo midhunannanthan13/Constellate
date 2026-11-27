@@ -37,6 +37,22 @@ class Command(BaseCommand):
 
     def _seed_habit_checkins(self, habit, offsets_with_notes):
         today = timezone.localdate()
+        min_offset = min(d for d, _ in offsets_with_notes)
+        expected_latest = today - timedelta(days=min_offset)
+        existing_qs = CheckIn.objects.filter(habit=habit)
+        latest_date = existing_qs.order_by('-date').values_list('date', flat=True).first()
+
+        # If already current (latest check-in matches expected_latest and count matches), do nothing
+        if latest_date == expected_latest and existing_qs.count() == len(offsets_with_notes):
+            return 0, False
+
+        # If run on a later day (or incomplete), refresh this demo habit's check-ins
+        # so the latest streak always ends today
+        shifted = False
+        if existing_qs.exists():
+            existing_qs.delete()
+            shifted = True
+
         created_count = 0
         for days_ago, note in offsets_with_notes:
             target_date = today - timedelta(days=days_ago)
@@ -47,7 +63,7 @@ class Command(BaseCommand):
             )
             if created:
                 created_count += 1
-        return created_count
+        return created_count, shifted
 
     def handle(self, *args, **options):
         demo_password = "constellate123"
@@ -112,6 +128,7 @@ class Command(BaseCommand):
         ]
 
         total_new_checkins = 0
+        shifted_habits = 0
         for spec in habit_specs:
             habit, _ = Habit.objects.get_or_create(
                 user=demo_user,
@@ -122,7 +139,10 @@ class Command(BaseCommand):
                     "archived": False,
                 },
             )
-            total_new_checkins += self._seed_habit_checkins(habit, spec["offsets"])
+            added, shifted = self._seed_habit_checkins(habit, spec["offsets"])
+            total_new_checkins += added
+            if shifted:
+                shifted_habits += 1
 
         # Award badges via the standard badge service
         demo_badges = evaluate_and_award_badges(demo_user)
@@ -166,7 +186,10 @@ class Command(BaseCommand):
                     "archived": False,
                 },
             )
-            total_new_checkins += self._seed_habit_checkins(habit, spec["offsets"])
+            added, shifted = self._seed_habit_checkins(habit, spec["offsets"])
+            total_new_checkins += added
+            if shifted:
+                shifted_habits += 1
 
         evaluate_and_award_badges(friend_user)
 
@@ -189,7 +212,8 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Demo seed complete! New check-ins added: {total_new_checkins}. "
+                f"Demo seed complete! Check-ins written: {total_new_checkins} "
+                f"(habits refreshed to today: {shifted_habits}). "
                 f"New badges awarded to stargazer_demo: {len(demo_badges)}."
             )
         )
